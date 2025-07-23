@@ -8,7 +8,7 @@ from tqdm.asyncio import tqdm_asyncio
 os.environ["OPENAI_API_KEY"] = open("openai_api_key.txt").read().strip()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_source', default='hypertension')
+parser.add_argument('--data_source', default='medical')
 args = parser.parse_args()
 data_source = args.data_source
 
@@ -19,7 +19,7 @@ async def query_with_semaphore(sem, q):
         return await rag.aquery(q, QueryParam(only_need_context=True))
 
 async def main():
-    with open(f"datasets/{data_source}/questions.json") as f:
+    with open(f"datasets/{data_source}/questions.json", encoding='utf-8') as f:
         data = json.load(f)
     questions = [item['question'] for item in data]
 
@@ -28,7 +28,7 @@ async def main():
     results = await tqdm_asyncio.gather(*tasks)
 
     for d, res in zip(data, results):
-        d['knowledge'] = res
+        d['context'] = res
 
     save_dir = f"results/HyperGraphRAG/{data_source}/test_knowledge.json"
     if os.path.exists(save_dir):
@@ -36,7 +36,7 @@ async def main():
     if not os.path.exists(os.path.dirname(save_dir)):
         os.makedirs(os.path.dirname(save_dir))
 
-    with open(save_dir, 'w') as f:
+    with open(save_dir, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
     print(f"Results saved to {save_dir}")
 
