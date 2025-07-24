@@ -30,7 +30,7 @@ async def main():
     for d, res in zip(data, results):
         d['context'] = res
 
-    save_dir = f"results/HyperGraphRAG/{data_source}/test_knowledge.json"
+    save_dir = f"results/HyperGraphRAG/{data_source}/test_context.json"
     if os.path.exists(save_dir):
         os.remove(save_dir)
     if not os.path.exists(os.path.dirname(save_dir)):

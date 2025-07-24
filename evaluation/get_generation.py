@@ -5,7 +5,7 @@ from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_sources', default='hypertension')
+parser.add_argument('--data_sources', default='medical')
 parser.add_argument('--methods', default='StandardRAG')
 args = parser.parse_args()
 methods = args.methods.split(',')
@@ -22,7 +22,7 @@ You are a helpful assistant responding to questions based on given knowledge.
 
 ---Knowledge---
 
-{d['knowledge']}
+{d['context']}
 
 ---Goal---
 
@@ -42,23 +42,28 @@ Output format for answer:
 
 {d['question']}
 """
-    d['prompt'] = prompt
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}]
         )
-        d['generation'] = response.choices[0].message.content
+        d['generated_answer'] = response.choices[0].message.content
     except Exception as e:
-        d['generation'] = f"[ERROR] {str(e)}"
+        d['generated_answer'] = f"[ERROR] {str(e)}"
     return d
 
 def process_method(method):
     for data_source in data_sources:
         print(f"[DEBUG] {method} {data_source}")
-        data_dir = f"results/{method}/{data_source}/test_knowledge.json"
-        with open(data_dir) as f:
+        data_dir = f"results/{method}/{data_source}/test_context.json"
+        with open(data_dir, encoding='utf-8') as f:
             data = json.load(f)
+
+         # Change 'answer' key to 'gold_answer' in input data
+        for item in data:
+            if 'answer' in item:
+                item['gold_answer'] = item.pop('answer')
 
         results = []
         with ThreadPoolExecutor(max_workers=32) as executor:
@@ -68,7 +73,7 @@ def process_method(method):
 
         save_dir = f"results/{method}/{data_source}/test_generation.json"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
-        with open(save_dir, 'w') as f:
+        with open(save_dir, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=4)
         print(f"[{method}] Results saved to {save_dir}")
 
