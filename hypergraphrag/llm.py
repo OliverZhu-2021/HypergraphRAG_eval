@@ -1006,6 +1006,72 @@ async def hf_embedding(texts: list[str], tokenizer, embed_model) -> np.ndarray:
     else:
         return embeddings.detach().cpu().numpy()
 
+@wrap_embedding_func_with_attrs(embedding_dim=1024, max_token_size=512)
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+    retry=retry_if_exception_type((RateLimitError, APIConnectionError, Timeout)),
+)
+async def huggingface_bge_embedding(
+    texts: list[str],
+    model: str = "BAAI/bge-large-en-v1.5",
+    api_key: str = None,
+) -> np.ndarray:
+    """
+    HuggingFace Inference API for BGE embeddings using official InferenceClient
+    """
+    try:
+        from huggingface_hub import InferenceClient
+    except ImportError:
+        raise ImportError("Please install huggingface_hub: pip install huggingface_hub")
+    
+    # Get API token
+    if api_key:
+        hf_token = api_key
+    else:
+        hf_token = os.environ.get("HUGGINGFACE_API_KEY") or os.environ.get("HF_TOKEN")
+    
+    if not hf_token:
+        raise ValueError("HuggingFace API key required. Set HF_TOKEN environment variable")
+    
+    # Initialize the client
+    client = InferenceClient(
+        model=model,
+        token=hf_token,
+    )
+    
+    embeddings = []
+    
+    # Process each text individually to handle errors gracefully
+    for text in texts:
+        try:
+            result = client.feature_extraction(text)
+            
+            # Convert to numpy array regardless of input format
+            embedding = np.array(result)
+            
+            # If it's 2D (multiple tokens), take the first token (CLS)
+            if embedding.ndim == 2:
+                embedding = embedding[0]
+            
+            # Normalize
+            embedding = embedding / np.linalg.norm(embedding)
+            embeddings.append(embedding)
+                
+        except Exception as e:
+            if "loading" in str(e).lower():
+                logger.warning("Model loading, waiting 20 seconds...")
+                await asyncio.sleep(20)
+                result = client.feature_extraction(text)
+                embedding = np.array(result)
+                if embedding.ndim == 2:
+                    embedding = embedding[0]
+                embedding = embedding / np.linalg.norm(embedding)
+                embeddings.append(embedding)
+            else:
+                raise e
+    
+    return np.array(embeddings)
 
 async def ollama_embedding(texts: list[str], embed_model, **kwargs) -> np.ndarray:
     """
