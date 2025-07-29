@@ -34,6 +34,8 @@ from .utils import (
     logger,
 )
 
+from .bge_embedding_local_ import BGEEmbeddingLocal
+
 import sys
 
 if sys.version_info < (3, 9):
@@ -1091,6 +1093,32 @@ async def ollama_embed(texts: list[str], embed_model, **kwargs) -> np.ndarray:
     data = ollama_client.embed(model=embed_model, input=texts)
     return data["embeddings"]
 
+
+# Global singleton storage
+_bge_model_instances = {}
+
+def get_bge_model_instance(model_name: str = "BAAI/bge-large-en-v1.5") -> BGEEmbeddingLocal:
+    global _bge_model_instances
+    if model_name not in _bge_model_instances:
+        _bge_model_instances[model_name] = BGEEmbeddingLocal(model_name)
+    return _bge_model_instances[model_name]
+
+@wrap_embedding_func_with_attrs(embedding_dim=1024, max_token_size=512)
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type((RuntimeError, torch.cuda.OutOfMemoryError)),
+)
+async def bge_embedding_local(
+    texts: List[str],
+    model: str = "BAAI/bge-large-en-v1.5",
+    **kwargs  # Accept additional kwargs for compatibility
+) -> np.ndarray:
+    """
+    Local BGE embedding function compatible with hypergraphrag interface
+    """
+    bge_model = get_bge_model_instance(model)
+    return await bge_model.encode(texts, model)
 
 class Model(BaseModel):
     """

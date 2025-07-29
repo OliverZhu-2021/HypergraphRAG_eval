@@ -1045,26 +1045,27 @@ async def huggingface_bge_embedding(
     # Process each text individually to handle errors gracefully
     for text in texts:
         try:
-            # Use the feature_extraction method
             result = client.feature_extraction(text)
             
-            if isinstance(result, list) and len(result) > 0:
-                # BGE models: take the CLS token embedding (first token)
-                embedding = np.array(result)[0]  # First token = CLS token
-                # Normalize the embedding (important for BGE models)
-                embedding = embedding / np.linalg.norm(embedding)
-                embeddings.append(embedding)
-            else:
-                raise ValueError(f"Unexpected response format: {result}")
+            # Convert to numpy array regardless of input format
+            embedding = np.array(result)
+            
+            # If it's 2D (multiple tokens), take the first token (CLS)
+            if embedding.ndim == 2:
+                embedding = embedding[0]
+            
+            # Normalize
+            embedding = embedding / np.linalg.norm(embedding)
+            embeddings.append(embedding)
                 
         except Exception as e:
-            # Handle model loading delays or other API errors
-            if "loading" in str(e).lower() or "503" in str(e):
-                logger.warning(f"Model is loading, waiting 20 seconds and retrying...")
+            if "loading" in str(e).lower():
+                logger.warning("Model loading, waiting 20 seconds...")
                 await asyncio.sleep(20)
-                # Retry once
                 result = client.feature_extraction(text)
-                embedding = np.array(result)[0]
+                embedding = np.array(result)
+                if embedding.ndim == 2:
+                    embedding = embedding[0]
                 embedding = embedding / np.linalg.norm(embedding)
                 embeddings.append(embedding)
             else:

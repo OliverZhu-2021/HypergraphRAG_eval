@@ -187,3 +187,4 @@ evaluation/contexts/*
 evaluation/datasets/*
 evaluation/expr/*
 evaluation/results/*
+huggingface_api_key.txt

@@ -1,15 +1,15 @@
 import os
 import json
 from hypergraphrag import HyperGraphRAG
-from hypergraphrag.llm import huggingface_bge_embedding
+from hypergraphrag.llm import bge_embedding_local
 
-# os.environ["OPENAI_API_KEY"] = "ADD YOUR OPENAI_API_KEY HERE"
-# os.environ['HUGGINGFACE_API_KEY'] = "ADD YOUR HUGGINGFACE_API_KEY HERE"
+# os.environ["OPENAI_API_KEY"] = ""
+# os.environ['HUGGINGFACE_API_KEY'] = ""
 
 rag = HyperGraphRAG(
-    embedding_func=huggingface_bge_embedding,
-    chunk_token_size=400,
-    chunk_overlap_token_size=50,
+    embedding_func=bge_embedding_local,
+    chunk_token_size=512,
+    chunk_overlap_token_size=32,
     node2vec_params={
         "dimensions": 1024,
         "num_walks": 10,
