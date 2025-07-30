@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 import asyncio
-from hypergraphrag import HyperGraphRAG, QueryParam
+from hypergraphrag import HyperGraphRAG, QueryParam, bge_embedding_local
 from tqdm.asyncio import tqdm_asyncio
 
 os.environ["OPENAI_API_KEY"] = open("openai_api_key.txt").read().strip()
@@ -12,7 +12,22 @@ parser.add_argument('--data_source', default='medical')
 args = parser.parse_args()
 data_source = args.data_source
 
-rag = HyperGraphRAG(working_dir=f"expr/{data_source}")
+rag = HyperGraphRAG(
+    working_dir=f"expr/{data_source}",
+    embedding_func_max_async=32,
+    llm_model_max_async=32,
+    embedding_func=bge_embedding_local,
+    chunk_token_size=512,
+    chunk_overlap_token_size=64,
+    node2vec_params={
+        "dimensions": 1024,
+        "num_walks": 10,
+        "walk_length": 40,
+        "window_size": 2,
+        "iterations": 3,
+        "random_seed": 3,
+    }
+)
 
 async def query_with_semaphore(sem, q):
     async with sem:

@@ -1,5 +1,5 @@
 from .hypergraphrag import HyperGraphRAG as HyperGraphRAG, QueryParam as QueryParam
-from .llm import huggingface_bge_embedding as huggingface_bge_embedding
+from .llm import bge_embedding_local as bge_embedding_local
 
 __version__ = "1.0.6"
 __author__ = "Zirui Guo"

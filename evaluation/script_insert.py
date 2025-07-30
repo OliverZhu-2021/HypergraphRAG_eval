@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from hypergraphrag import HyperGraphRAG, huggingface_bge_embedding
+from hypergraphrag import HyperGraphRAG, bge_embedding_local
 import argparse
 
 os.environ["OPENAI_API_KEY"] = open("openai_api_key.txt").read().strip()
@@ -40,7 +40,7 @@ rag = HyperGraphRAG(
     working_dir=WORKING_DIR,
     embedding_func_max_async=32,
     llm_model_max_async=32,
-    embedding_func=huggingface_bge_embedding,
+    embedding_func=bge_embedding_local,
     chunk_token_size=512,
     chunk_overlap_token_size=64,
     node2vec_params={
