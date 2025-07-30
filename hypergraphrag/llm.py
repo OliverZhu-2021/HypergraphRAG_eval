@@ -34,7 +34,7 @@ from .utils import (
     logger,
 )
 
-from .bge_embedding_local_ import BGEEmbeddingLocal
+from .bge_embedding_local import BGEEmbeddingLocal, get_bge_model_instance
 
 import sys
 
@@ -1093,15 +1093,6 @@ async def ollama_embed(texts: list[str], embed_model, **kwargs) -> np.ndarray:
     data = ollama_client.embed(model=embed_model, input=texts)
     return data["embeddings"]
 
-
-# Global singleton storage
-_bge_model_instances = {}
-
-def get_bge_model_instance(model_name: str = "BAAI/bge-large-en-v1.5") -> BGEEmbeddingLocal:
-    global _bge_model_instances
-    if model_name not in _bge_model_instances:
-        _bge_model_instances[model_name] = BGEEmbeddingLocal(model_name)
-    return _bge_model_instances[model_name]
 
 @wrap_embedding_func_with_attrs(embedding_dim=1024, max_token_size=512)
 @retry(

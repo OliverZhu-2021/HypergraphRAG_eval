@@ -1,11 +1,11 @@
 import os
 from hypergraphrag import HyperGraphRAG
-from hypergraphrag.llm import bge_local_embedding
+from hypergraphrag.llm import bge_embedding_local
 
-# os.environ["OPENAI_API_KEY"] = ""     # Add before run
+# os.environ["OPENAI_API_KEY"] = "PLACE YOUR OPENAI API KEY HERE"
 
 rag = HyperGraphRAG(
-    embedding_func=bge_local_embedding,
+    embedding_func=bge_embedding_local,
     chunk_token_size=512,
     chunk_overlap_token_size=32,
     node2vec_params={
